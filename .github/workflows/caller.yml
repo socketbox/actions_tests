@@ -1,13 +1,13 @@
 name: Caller Workflow
 on:
   workflow_dispatch:
-		inputs:
-			aws_profile:
-				type: choice
-				options:
-					- dev
-					- staging
-					- prod
+    inputs:
+      aws_profile:
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
 #permissions:
 #  id-token: write
 #  contents: write
