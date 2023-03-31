@@ -13,21 +13,13 @@ jobs:
     steps:
       - name: Map option to environment
         run: |
-          if [[ ${{inputs.aws_profile}} == 'dev' ]]
+          if [[ ${{inputs.aws_profile}} == 'DEV' ]]
           then
             echo secret_prefix=EDCAR >> $GITHUB_ENV
-          else
-            secret_prefix=${ ${{inputs.aws_profile}}^^}
-            echo secret_prefix=$secret_prefix >> $GITHUB_ENV
-            echo ${{env.secret_prefix}}
           fi
       - name: Secret test
         run: |
-          echo "Secret FOO_SECRET: $FOO_SECRET"
-          echo "Secret PREPROD_REGION: $PREPROD_SECRET"
-          echo "Env BUGGER: $BUGGER"
-        env:
-          FOO_SECRET: format('chocolate_{0}', bar)
-          #PREPROD_SECRET: format('${{ secrets.{0}_REGION }}', 'PREPROD')
-          PREPROD_SECRET: format('secrets.{0}_REGION', 'PREPROD')
-          BUGGER: all
+          echo ${{ secrets.PREPROD_REGION }}
+          echo ${{inputs.environment}}
+          echo ${{ secrets[format('{0}_REGION', inputs.environment)] }}
+          echo "Secret PREPROD_REGION: ${{ secrets[format('{0}_REGION', inputs.environment)] }}"
