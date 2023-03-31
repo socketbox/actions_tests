@@ -5,9 +5,9 @@ on:
       aws_profile:
         type: choice
         options:
-          - dev
-          - staging
-          - prod
+          - DEV
+          - STAGING
+          - PROD
 #permissions:
 #  id-token: write
 #  contents: write
