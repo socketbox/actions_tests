@@ -2,16 +2,24 @@ on:
   workflow_call:
     inputs:
       environment:
-				description: 'the environment to deploy to'
-				default: 'edcar'
-				required: true
-				type: string
+        description: 'the environment to deploy to'
+        required: true
+        type: string
 
 jobs:
-	environment-test:
-		runs-on: ubuntu-latest
-		environment: ${{inputs.environment}}
-		steps:
-			- name: echo-environment
-			 	run: |
-					echo "This is inputs.environment:${{inputs.environment}}"
+  environment-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Map option to environment
+        run: |
+          if [[ ${{inputs.aws_profile}} == 'dev' ]]
+          then
+            echo secret_prefix=EDCAR >> $GITHUB_ENV
+          else
+            echo secret_prefix=${{inputs.aws_profile}}^^
+          fi
+      - name: Secret test
+        run: |
+          echo "Secret PREPROD_REGION: $PREPROD_SECRET"
+        env:
+          PREPROD_SECRET: format('${{	secrets.{0}_REGION }}', ${{env.secret_prefx)}}
