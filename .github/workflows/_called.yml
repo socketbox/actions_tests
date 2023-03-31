@@ -1,0 +1,17 @@
+on:
+  workflow_call:
+    inputs:
+      environment:
+				description: 'the environment to deploy to'
+				default: 'edcar'
+				required: true
+				type: string
+
+jobs:
+	environment-test:
+		runs-on: ubuntu-latest
+		environment: ${{inputs.environment}}
+		steps:
+			- name: echo-environment
+			 	run: |
+					echo "This is inputs.environment:${{inputs.environment}}"
