@@ -1,0 +1,32 @@
+name: Caller Workflow
+on:
+  workflow_dispatch:
+		inputs:
+			aws_profile:
+				type: choice
+				options:
+					- dev
+					- staging
+					- prod
+#permissions:
+#  id-token: write
+#  contents: write
+#  packages: write
+
+jobs:
+  call_called:
+		runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+			- name: Map option to environment
+				run: |
+					if [[ ${{input.aws_profile}} == 'dev' ]]
+				  then
+						echo secret_prefix=EDCAR >> $GITHUB_ENV
+					else
+						echo secret_prefix=${{input.aws_profile}}^^
+      - name: Secret test
+        run: |
+			  	echo "Secret PREPROD_REGION: $PREPROD_SECRET"
+				env:
+					PREPROD_SECRET: format('${{	secrets.{0}_REGION }}', ${{env.secret_prefx)}}
