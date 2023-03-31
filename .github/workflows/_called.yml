@@ -17,10 +17,17 @@ jobs:
           then
             echo secret_prefix=EDCAR >> $GITHUB_ENV
           else
-            echo secret_prefix=${{inputs.aws_profile}}^^
+            secret_prefix=${ ${{inputs.aws_profile}}^^}
+            echo secret_prefix=$secret_prefix >> $GITHUB_ENV
+            echo ${{env.secret_prefix}}
           fi
       - name: Secret test
         run: |
+          echo "Secret FOO_SECRET: $FOO_SECRET"
           echo "Secret PREPROD_REGION: $PREPROD_SECRET"
+          echo "Env BUGGER: $BUGGER"
         env:
-          PREPROD_SECRET: format('${{	secrets.{0}_REGION }}', ${{env.secret_prefx)}}
+          FOO_SECRET: format('chocolate_{0}', bar)
+          #PREPROD_SECRET: format('${{ secrets.{0}_REGION }}', 'PREPROD')
+          PREPROD_SECRET: format('secrets.{0}_REGION', 'PREPROD')
+          BUGGER: all
