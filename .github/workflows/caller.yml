@@ -15,18 +15,7 @@ on:
 
 jobs:
   call_called:
-		runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    steps:
-			- name: Map option to environment
-				run: |
-					if [[ ${{input.aws_profile}} == 'dev' ]]
-				  then
-						echo secret_prefix=EDCAR >> $GITHUB_ENV
-					else
-						echo secret_prefix=${{input.aws_profile}}^^
-      - name: Secret test
-        run: |
-			  	echo "Secret PREPROD_REGION: $PREPROD_SECRET"
-				env:
-					PREPROD_SECRET: format('${{	secrets.{0}_REGION }}', ${{env.secret_prefx)}}
+    uses: socketbox/actions_tests/.github/workflows/_called.yml@main
+    with:
+      environment: ${{inputs.aws_profile}}
