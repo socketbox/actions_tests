@@ -10,9 +10,6 @@ on:
 jobs:
   prepare-environment:
     runs-on: ubuntu-latest
-    outputs:
-      region_name: ${{ steps.set-output-values.outputs.region_name }}
-      role_name: ${{ steps.set-output-values.outputs.role_name }}
     steps:
     - name: Map option to environment
       id: map-input-to-env
