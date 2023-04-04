@@ -1,4 +1,4 @@
-name: Called Workflow
+name: Called 2 Workflow
 on:
   workflow_call:
     inputs:

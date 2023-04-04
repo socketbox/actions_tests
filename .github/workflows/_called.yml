@@ -36,7 +36,7 @@ jobs:
     needs: prepare-environment
     runs-on: ubuntu-latest
     steps:
-      - name: Secret Test 3
+      - name: Secret Test 1
         run: |
             if [[ "$REGION_NAME" == 'EDCAR_REGION' ]]
             then
