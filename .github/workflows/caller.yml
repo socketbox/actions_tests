@@ -8,10 +8,7 @@ on:
           - DEV
           - STAGING
           - PROD
-#permissions:
-#  id-token: write
-#  contents: write
-#  packages: write
+permissions: read-all
 
 jobs:
   call_called:
