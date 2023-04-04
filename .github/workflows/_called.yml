@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       region_name: ${{ steps.set-output-values.outputs.region_name }}
+      role_name: ${{ steps.set-output-values.outputs.role_name }}
     steps:
     - name: Map option to environment
       id: map-input-to-env
@@ -37,12 +38,15 @@ jobs:
     steps:
       - name: Secret Test 3
         run: |
-            if [[ '$REGION_NAME' == 'edcar_region' ]]
+            if [[ '$REGION_NAME' == 'EDCAR_REGION' ]]
             then
               echo "Edcar Region!"
-            elif [[ '$REGION_NAME' == 'preprod_region' ]]
+              echo "Role: $ROLE_NAME"
+            elif [[ '$REGION_NAME' == 'PREPROD_REGION' ]]
             then
               echo "Preprod Region!"
+              echo "Role: $ROLE_NAME"
             fi
         env:
           REGION_NAME: ${{ needs.prepare-environment.outputs.region_name }}
+          ROLE_NAME: ${{ needs.prepare-environment.outputs.role_name }}
