@@ -38,7 +38,7 @@ jobs:
     steps:
       - name: Secret Test 3
         run: |
-            if [[ ${{env.REGION_NAME}} == 'EDCAR_REGION' ]]
+            if [[ ${{env.region_name}} == 'EDCAR_REGION' ]]
             then
               echo "Edcar Region set by way of env file!"
               echo "Role: ${{env.role_name}}"
