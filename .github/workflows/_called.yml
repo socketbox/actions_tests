@@ -13,13 +13,42 @@ jobs:
     steps:
       - name: Map option to environment
         run: |
-          if [[ ${{inputs.aws_profile}} == 'DEV' ]]
+          if [[ '${{inputs.environment}}' == 'DEV' ]]
           then
+            echo "BALLS"
             echo secret_prefix=EDCAR >> $GITHUB_ENV
+          elif [[ '${{inputs.environment}}' == 'STAGING' ]] 
+          then
+            echo "convert STAGING to PREPROD in the future"
+            echo secret_prefix=PREPROD >> $GITHUB_ENV
           fi
       - name: Secret test
         run: |
-          echo ${{ secrets.PREPROD_REGION }}
-          echo ${{inputs.environment}}
-          echo ${{ secrets[format('{0}_REGION', inputs.environment)] }}
-          echo "Secret PREPROD_REGION: ${{ secrets[format('{0}_REGION', inputs.environment)] }}"
+          echo "secrets.PREPROD_REGION: ${{ secrets.PREPROD_REGION }}"
+          echo "inputs.environment: ${{inputs.environment}}"
+          echo "env.secret_prefix: ${{env.secret_prefix}}"
+          echo "Secret PREPROD_REGION: ${{ secrets[format('{0}_REGION', env.secret_prefix)] }}"
+          echo "Secret EDCAR_REGION: ${{ secrets[format('{0}_REGION', env.secret_prefix)] }}"
+          if [[ '${{ secrets[format('{0}_REGION', env.secret_prefix)] }}' == 'edcar_region' ]]
+          then
+            echo "Edcar Region!"
+          elif [[ '${{ secrets[format('{0}_REGION', env.secret_prefix)] }}' == 'preprod_region' ]]
+          then
+            echo "Preprod Region!"
+          fi
+      - name: Secret Test 2
+        run: |
+            echo "secrets.PREPROD_REGION: ${{ secrets.PREPROD_REGION }}"
+            echo "inputs.environment: ${{inputs.environment}}"
+            echo "env.secret_prefix: ${{env.secret_prefix}}"
+            echo "Secret PREPROD_REGION: ${{ secrets[format('{0}_REGION', env.secret_prefix)] }}"
+            echo "Secret EDCAR_REGION: ${{ secrets[format('{0}_REGION', env.secret_prefix)] }}"
+            if [[ '$REGION' == 'edcar_region' ]]
+            then
+              echo "Edcar Region!"
+            elif [[ '$REGION' == 'preprod_region' ]]
+            then
+              echo "Preprod Region!"
+            fi
+        env:
+          REGION: ${{secrets[format('{0}_REGION', env.secret_prefix)]}}
