@@ -1,0 +1,49 @@
+name: Called Workflow
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'the environment to deploy to'
+        required: true
+        type: string
+
+jobs:
+  prepare-environment:
+    runs-on: ubuntu-latest
+    outputs:
+      region_name: ${{ steps.set-output-values.outputs.region_name }}
+      role_name: ${{ steps.set-output-values.outputs.role_name }}
+    steps:
+    - name: Map option to environment
+      id: map-input-to-env
+      run: |
+        if [[ '${{inputs.environment}}' == 'DEV' ]]
+        then
+          echo "DEV to EDCAR"
+          echo "SECRET_PREFIX=EDCAR" >> $GITHUB_ENV
+        elif [[ '${{inputs.environment}}' == 'STAGING' ]] 
+        then
+          echo "STAGING to PREPROD"
+          echo "SECRET_PREFIX=PREPROD" >> $GITHUB_ENV
+        fi
+    - name: Set secret names as env vars in env file
+      id: set-env-file-values
+      run: |
+        echo "region_name=${{env.SECRET_PREFIX}}_REGION" >> "$GITHUB_ENV"
+        echo "role_name=${{env.SECRET_PREFIX}}_ROLE" >> "$GITHUB_ENV"
+
+  environment-test:
+    needs: prepare-environment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Secret Test 3
+        run: |
+            if [[ ${{env.REGION_NAME}} == 'EDCAR_REGION' ]]
+            then
+              echo "Edcar Region set by way of env file!"
+              echo "Role: ${{env.role_name}}"
+            elif [[ "$REGION_NAME" == 'PREPROD_REGION' ]]
+            then
+              echo "Preprod Region!"
+              echo "Role: $ROLE_NAME"
+            fi

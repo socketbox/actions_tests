@@ -16,3 +16,9 @@ jobs:
     uses: socketbox/actions_tests/.github/workflows/_called.yml@main
     with:
       environment: ${{inputs.aws_profile}}
+
+  call_called2:
+    if: github.ref == 'refs/heads/main'
+    uses: socketbox/actions_tests/.github/workflows/_called2.yml@main
+    with:
+      environment: ${{inputs.aws_profile}}
