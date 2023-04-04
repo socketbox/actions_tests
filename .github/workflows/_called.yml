@@ -32,12 +32,10 @@ jobs:
     steps:
       - name: Secret Test 3
         run: |
-            if [[ '$REGION_NAME' == 'edcar_region' ]]
+            if [[ '${{env.REGION_NAME}}' == 'edcar_region' ]]
             then
               echo "Edcar Region!"
-            elif [[ '$REGION_NAME' == 'preprod_region' ]]
+            elif [[ '${{env.REGION_NAME}}' == 'preprod_region' ]]
             then
               echo "Preprod Region!"
             fi
-        env:
-          REGION_NAME: ${{env.REGION_NAME}}
