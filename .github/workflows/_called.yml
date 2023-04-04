@@ -10,8 +10,11 @@ on:
 jobs:
   prepare-environment:
     runs-on: ubuntu-latest
+    outputs:
+      region_name: ${{ steps.set-output-values.outputs.region_name }}
     steps:
     - name: Map option to environment
+      id: map-input-to-env
       run: |
         if [[ '${{inputs.environment}}' == 'DEV' ]]
         then
@@ -23,8 +26,10 @@ jobs:
           echo "SECRET_PREFIX=PREPROD" >> $GITHUB_ENV
         fi
     - name: Set secret names as env vars
+      id: set-output-values
       run: |
-        echo "REGION_NAME=${{env.SECRET_PREFIX}}_REGION" >> $GITHUB_ENV
+        echo "region_name=${{env.SECRET_PREFIX}}_REGION" >> "$GITHUB_OUTPUT"
+        echo "role_name=${{env.SECRET_PREFIX}}_ROLE" >> "$GITHUB_OUTPUT"
 
   environment-test:
     needs: prepare-environment
@@ -32,10 +37,12 @@ jobs:
     steps:
       - name: Secret Test 3
         run: |
-            if [[ '${{env.REGION_NAME}}' == 'edcar_region' ]]
+            if [[ '$REGION_NAME' == 'edcar_region' ]]
             then
               echo "Edcar Region!"
-            elif [[ '${{env.REGION_NAME}}' == 'preprod_region' ]]
+            elif [[ '$REGION_NAME' == 'preprod_region' ]]
             then
               echo "Preprod Region!"
             fi
+        env:
+          REGION_NAME: ${{ needs.prepare-environment.outputs.region_name }}
