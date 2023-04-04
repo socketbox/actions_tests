@@ -38,11 +38,11 @@ jobs:
     steps:
       - name: Secret Test 3
         run: |
-            if [[ '$REGION_NAME' == 'EDCAR_REGION' ]]
+            if [[ "$REGION_NAME" == 'EDCAR_REGION' ]]
             then
               echo "Edcar Region!"
               echo "Role: $ROLE_NAME"
-            elif [[ '$REGION_NAME' == 'PREPROD_REGION' ]]
+            elif [[ "$REGION_NAME" == 'PREPROD_REGION' ]]
             then
               echo "Preprod Region!"
               echo "Role: $ROLE_NAME"
