@@ -1,0 +1,22 @@
+name: _deploy
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'the environment to deploy to'
+        required: true
+        type: string
+    outputs:
+      simulate_deployment_status:
+        value: ${{jobs.simulate_deployment.outputs.deploy_status}}
+
+jobs:
+  simulate_deployment:
+    runs-on: ubuntu-latest
+    outputs:
+      deploy_status: ${{steps.set_status_output.outputs.simulate_deployment_status}}
+    steps:
+    - name: Set Status Output
+      id: set_status_output
+      run: |
+        echo "simulate_deployment_status=failure" >> $GITHUB_OUTPUT
