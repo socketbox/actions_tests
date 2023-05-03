@@ -1,0 +1,23 @@
+name: Caller Workflow
+on:
+  workflow_dispatch:
+    inputs:
+      aws_profile:
+        type: choice
+        options:
+          - DEV
+          - STAGING
+          - PROD
+    
+permissions: read-all
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      environment: ${{inputs.aws_profile}}
+
+  notify:
+    uses: ./.github/workflows/_notify.yml
+    with:
+      environment: ${{inputs.aws_profile}}
