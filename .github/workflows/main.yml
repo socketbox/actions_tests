@@ -18,6 +18,7 @@ jobs:
       environment: ${{inputs.aws_profile}}
 
   notify:
+    needs: [ deploy ]
     uses: ./.github/workflows/_notify.yml
     with:
-      environment: ${{inputs.aws_profile}}
+      simulate_deployment_result: ${{needs.deploy.outputs.simulate_deployment_status}}

@@ -1,4 +1,4 @@
-name: _deploy
+name: _notify
 on:
   workflow_call:
     inputs:
@@ -6,17 +6,17 @@ on:
         description: 'the environment to deploy to'
         required: true
         type: string
-    outputs:
-      simulate_deployment_status:
-        value: ${{jobs.simulate_deployment.outputs.deploy_status}}
+      simulate_deployment_result:
+        type: string
+        required: true
 
 jobs:
-  simulate_deployment:
+  notify_whomever:
     runs-on: ubuntu-latest
-    outputs:
-      deploy_status: ${{steps.set_status_output.outputs.simulate_deployment_status}}
     steps:
-    - name: Set Status Output
-      id: set_status_output
+    - name: Notify
+      id: notify
       run: |
-        echo "simulate_deployment_status=failure" >> $GITHUB_OUTPUT
+        echo "##########"
+        echo "Outcome of simulate_deployment: ${{inputs.simulate_deployment_result}}"
+        echo "##########"
