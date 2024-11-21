@@ -1,0 +1,66 @@
+name: _tag
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+      git_sha:
+        type: string
+        required: true
+    outputs:
+      latest_tag:
+        value: ${{jobs.tag.outputs.latest_tag}}
+
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: environment
+      git_sha:
+        type: string
+        description: "Git SHA"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    environment: ${{inputs.environment}}
+    runs-on: ubuntu-latest
+    outputs:
+      latest_tag: ${{steps.tag.outputs.tag}}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{inputs.git_sha}}
+          fetch-depth: '0'
+      # here we increment the major version and push the tag
+      - name: Bump version and push tag
+        id: bump-n-tag
+        uses: anothrNick/github-tag-action@1.71.0
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DEFAULT_BUMP: "major"
+      # this is probably not necessary, since the previous step outputs a tag
+      - name: Get latest Tag
+        id: tag
+        run: |
+          git fetch --tags
+          echo "tag=$(git describe --tags ${{inputs.git_sha}})" >> "$GITHUB_OUTPUT"
+      - name: Create Github Release from Tag
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name:
+            ${{ steps.bump-n-tag.outputs.tag }}
+      - name: Create Sentry release
+        if: ${{inputs.environment == 'production'}}
+        uses: getsentry/action-release@v1
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        with:
+          environment: production
+          version: ${{ steps.bump-n-tag.outputs.tag }}

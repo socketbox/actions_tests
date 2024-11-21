@@ -1,0 +1,34 @@
+name: Tag and Notify
+on:
+  workflow_dispatch:
+    inputs:
+      git_ref:
+        description: 'Git reference to deploy'
+        required: true
+        default: 'main'
+        type: string
+      confirmation:
+        description: "Confirm production deployment"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  tag-release:
+    # change me back to true after testing
+    if: github.event.inputs.confirmation && needs.prod-deploy.outputs.deploy_status == 'true'
+    uses: ./.github/workflows/_tag.yml
+    secrets: inherit
+    with:
+      environment: "pbs-digi-prod"
+      git_sha: ${{needs.get-sha-for-git-ref.outputs.git_sha}}
+
+  slack-notifications:
+    uses: ./.github/workflows/_notify-slack.yml
+    needs: [ tag-release ]
+    secrets: inherit
+    with:
+      environment: pbs-digi-prod
+      git_sha: ${{needs.get-sha-for-git-ref.outputs.git_sha}}
+      latest_tag: ${{needs.tag-release.outputs.latest_tag}}
+      deploy-status: ${{needs.prod-deploy.outputs.deploy_status}}

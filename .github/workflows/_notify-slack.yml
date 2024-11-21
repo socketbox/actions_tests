@@ -1,0 +1,53 @@
+name: _notify_slack
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+      git_sha:
+        type: string
+        required: true
+      latest_tag:
+        required: true
+        type: string
+      deploy-status:
+        required: true
+        type: string
+
+jobs:
+  artifact-notify_slack:
+    environment: ${{inputs.environment}}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check tag input
+        run: |
+          if [ -z ${{inputs.latest_tag}} ]
+          then
+            echo "inputs.latest_tag is empty; using github.ref_name"
+            echo "checked_tag=${{github.ref_name}}" >> $GITHUB_ENV
+          else
+            echo "inputs.latest_tag is not empty"
+            echo "checked_tag=${{inputs.latest_tag}}" >> $GITHUB_ENV
+          fi
+      - name: Post a success message to Slack channel
+        if: inputs.deploy-status == 'true'
+        uses: slackapi/slack-github-action@v2.0.0
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: |
+            channel: ${{ vars.SLACK_CHANNEL }}
+            text: "Successfully deployed `dotorg-next` to `${{inputs.environment}}` :rocket:\n
+              Hash: `${{ inputs.git_sha }}`\nTag: `${{env.checked_tag }}`\n<${{vars.PBSORG_SITE_URL}}|${{vars.PBSORG_SITE_NAME}}>"
+      - name: Post a Failure Message to Slack channel
+        if: inputs.pbsorg-deploy-status == 'false' || inputs.lite-deploy-status == 'false' || inputs.svp-deploy-status == 'false'
+        uses: slackapi/slack-github-action@v2.0.0
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: |
+            channel: ${{ vars.SLACK_CHANNEL }}
+            text: "Failed to deploy `dotorg-next` to `${{inputs.environment}}` :robot_face:\n
+              Hash: `${{ inputs.git_sha }}`\nTag: `${{env.checked_tag}}`\n
+              <https://github.com/pbs/dotorg-next/actions|Check Actions> :thinking:"
