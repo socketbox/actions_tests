@@ -21,14 +21,6 @@ jobs:
     secrets: inherit
     with:
       environment: "pbs-digi-prod"
-      git_sha: ${{needs.get-sha-for-git-ref.outputs.git_sha}}
-
-  slack-notifications:
-    uses: ./.github/workflows/_notify-slack.yml
-    needs: [ tag-release ]
-    secrets: inherit
-    with:
-      environment: pbs-digi-prod
-      git_sha: ${{needs.get-sha-for-git-ref.outputs.git_sha}}
-      latest_tag: ${{needs.tag-release.outputs.latest_tag}}
-      deploy-status: ${{needs.prod-deploy.outputs.deploy_status}}
+      git_sha: "0123456789ABCDEF"
+      latest_tag: "EVS"
+      deploy-status: "true"

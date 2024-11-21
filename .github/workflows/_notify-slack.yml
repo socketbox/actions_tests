@@ -7,12 +7,15 @@ on:
         required: true
       git_sha:
         type: string
+        default: "012356789ABCDEF"
         required: true
       latest_tag:
         required: true
+        default: "EVS"
         type: string
       deploy-status:
         required: true
+        default: "true"
         type: string
 
 jobs:
@@ -31,13 +34,13 @@ jobs:
             echo "checked_tag=${{inputs.latest_tag}}" >> $GITHUB_ENV
           fi
       - name: Post a success message to Slack channel
-        if: inputs.deploy-status == 'true'
+        if: ${{inputs.deploy-status == 'true'}}
         uses: slackapi/slack-github-action@v2.0.0
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
           payload: |
-            channel: ${{ vars.SLACK_CHANNEL }}
+            channel: "scratch"
             text: "Successfully deployed `dotorg-next` to `${{inputs.environment}}` :rocket:\n
               Hash: `${{ inputs.git_sha }}`\nTag: `${{env.checked_tag }}`\n<${{vars.PBSORG_SITE_URL}}|${{vars.PBSORG_SITE_NAME}}>"
       - name: Post a Failure Message to Slack channel
@@ -47,7 +50,7 @@ jobs:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
           payload: |
-            channel: ${{ vars.SLACK_CHANNEL }}
+            channel: "scratch"
             text: "Failed to deploy `dotorg-next` to `${{inputs.environment}}` :robot_face:\n
               Hash: `${{ inputs.git_sha }}`\nTag: `${{env.checked_tag}}`\n
               <https://github.com/pbs/dotorg-next/actions|Check Actions> :thinking:"
