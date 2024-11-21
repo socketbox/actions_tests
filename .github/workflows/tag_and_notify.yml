@@ -13,11 +13,15 @@ on:
         type: boolean
         default: false
 
+permissions:
+  actions: read
+  id-token: write
+  contents: write
+  packages: write
+
 jobs:
-  tag-release:
-    # change me back to true after testing
-    if: github.event.inputs.confirmation && needs.prod-deploy.outputs.deploy_status == 'true'
-    uses: ./.github/workflows/_tag.yml
+  slack-notifications:
+    uses: ./.github/workflows/_notify-slack.yml
     secrets: inherit
     with:
       environment: "pbs-digi-prod"
