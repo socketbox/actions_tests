@@ -40,17 +40,7 @@ jobs:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
           payload: |
-            channel: "scratch"
+            errors: true
+            channel: ${{secrets.SLACK_CHANNEL_ID}}
             text: "Successfully deployed `dotorg-next` to `${{inputs.environment}}` :rocket:\n
               Hash: `${{ inputs.git_sha }}`\nTag: `${{env.checked_tag }}`\n<${{vars.PBSORG_SITE_URL}}|${{vars.PBSORG_SITE_NAME}}>"
-      - name: Post a Failure Message to Slack channel
-        if: inputs.pbsorg-deploy-status == 'false' || inputs.lite-deploy-status == 'false' || inputs.svp-deploy-status == 'false'
-        uses: slackapi/slack-github-action@v2.0.0
-        with:
-          method: chat.postMessage
-          token: ${{ secrets.SLACK_BOT_TOKEN }}
-          payload: |
-            channel: "scratch"
-            text: "Failed to deploy `dotorg-next` to `${{inputs.environment}}` :robot_face:\n
-              Hash: `${{ inputs.git_sha }}`\nTag: `${{env.checked_tag}}`\n
-              <https://github.com/pbs/dotorg-next/actions|Check Actions> :thinking:"
