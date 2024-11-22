@@ -40,7 +40,6 @@ jobs:
           method: chat.postMessage
           token: ${{secrets.SLACK_BOT_TOKEN}}
           payload: |
-            errors: true
             channel: ${{secrets.SLACK_CHANNEL_ID}}
             emoji: 
             blocks:
@@ -49,4 +48,7 @@ jobs:
                   type: "mrkdwn"
                   text: "Successfully deployed `dotorg-next` to `${{inputs.environment}}` :rocket:\n
                         Hash: `${{ inputs.git_sha }}`\nTag: `${{env.checked_tag }}`\n
-                        <https://www.pbs.org|www.pbs.org>"
+                        Run ID: ${{ github.run_id }}\n
+                        Run Number: ${{ github.run_number }}\n
+                        Run URL: <https://github.com/pbs/dotorg-next/actions/runs|GHA Run>\n
+                        Site: <https://www.pbs.org|www.pbs.org>"
