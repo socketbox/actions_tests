@@ -38,9 +38,15 @@ jobs:
         uses: slackapi/slack-github-action@v2.0.0
         with:
           method: chat.postMessage
-          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          token: ${{secrets.SLACK_BOT_TOKEN}}
           payload: |
             errors: true
             channel: ${{secrets.SLACK_CHANNEL_ID}}
-            text: "Successfully deployed `dotorg-next` to `${{inputs.environment}}` :rocket:\n
-              Hash: `${{ inputs.git_sha }}`\nTag: `${{env.checked_tag }}`\n<${{vars.PBSORG_SITE_URL}}|${{vars.PBSORG_SITE_NAME}}>"
+            emoji: 
+            blocks:
+              - type: "section"
+                text: 
+                  type: "mrkdwn"
+                  text: "Successfully deployed `dotorg-next` to `${{inputs.environment}}` :rocket:\n
+                        Hash: `${{ inputs.git_sha }}`\nTag: `${{env.checked_tag }}`\n
+                        <https://www.pbs.org|www.pbs.org>"
