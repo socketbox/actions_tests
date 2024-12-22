@@ -3,6 +3,7 @@
 <table>
   <thead>
     <tr>
+      <th>&nbsp;</th>
       <th scope="col">Previous Relase</th>
       <th scope="col">Current Release</th>
     </tr>
