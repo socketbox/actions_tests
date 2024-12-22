@@ -1,0 +1,124 @@
+name: Manual Rollback and Deployment
+on:
+  workflow_dispatch:
+    inputs:
+      git_ref:
+        description: 'Git reference to deploy'
+        required: true
+        default: 'main'
+        type: string
+      confirmation:
+        description: "Confirm production deployment"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  actions: read
+  id-token: write
+  contents: write
+  packages: write
+
+jobs:
+  get-sha-for-git-ref:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.git_ref }}
+      - name: Get SHA for git ref
+        id: get-sha-for-git-ref
+        run: |
+          echo "git_sha=$(git rev-parse ${{ inputs.git_ref }})" >> $GITHUB_OUTPUT
+    outputs:
+      git_sha: ${{ steps.get-sha-for-git-ref.outputs.git_sha }}
+
+  prod-deploy:
+    environment: pbs-digi-prod
+    runs-on: ubuntu-latest
+    if: github.event.inputs.confirmation
+    needs:
+      - get-sha-for-git-ref
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Assume Role
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.REGION }}
+          role-to-assume: arn:aws:iam::${{ vars.ACCOUNT_NUMBER }}:role/service/${{vars.OIDC_ROLE_NAME}}
+      - name: Login to AWS ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: Confirm Image Exists
+        id: find-image
+        run: |
+          aws ecr describe-images --repository-name="pbsorg-next" --image-ids  imageTag=${{needs.get-sha-for-git-ref.outputs.git_sha}} 
+          exit_code=$?
+          if [[ $exit_code -ne 0 ]]
+          then
+            echo "An error was encountered attempting to find an image with image tag ${{needs.get-sha-for-git-ref.outputs.git_sha}}"
+            echo "Please check to see that this image exists in the pbsorg-next repository of AWS ECR"
+            exit $exit_code
+          fi
+          exit $exit_code
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry  }}
+      - id: image-name
+        run: |
+          echo "image=$ECR_REGISTRY/pbsorg-next:${{ needs.get-sha-for-git-ref.outputs.git_sha }}" >> $GITHUB_OUTPUT
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry  }}
+      - name: Download pbsorg-next task definition
+        run: |
+          aws ecs describe-task-definition --task-definition pbsorg-next --query taskDefinition > pbsorg-next-task-definition.json
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: pbsorg-next-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: pbsorg-next-task-definition.json
+          container-name: pbsorg-next
+          image: ${{ steps.image-name.outputs.image }}
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.pbsorg-next-task-def.outputs.task-definition }}
+          service: pbsorg-next-prod-web-service
+          cluster: PROD
+          wait-for-service-stability: true
+      - name: Get latest Tag
+        id: tag
+        run: |
+          git fetch --tags
+          echo "tag=$(git describe --tags ${{ needs.get-sha-for-git-ref.outputs.git_sha }})" >> $GITHUB_OUTPUT
+      - name: Create Sentry release
+        uses: getsentry/action-release@v1
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+        with:
+          environment: production
+          version: ${{ steps.tag.outputs.tag }}
+      - name: Create Github Release from Tag
+        uses: softprops/action-gh-release@v2
+        if: ${{ success() }}
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+      - name: Post a Success Message to Slack channel
+        if: ${{ success() }}
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          channel-id: '#digi-pbsorg-ops'
+          slack-message: "Successfully deployed PNR to `PRODUCTION` :rocket:\nHash: `${{ needs.get-sha-for-git-ref.outputs.git_sha }}`\nTag: `${{ steps.tag.outputs.tag }}`\n<https://www.pbs.org|PBS.org Prod> & <https://watch.weta.org|SVP Prod> :eyes:\n<https://github.com/pbs/pbsorg/actions/workflows/manual-deploy.yml|Roll back :arrows_counterclockwise:>"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      - name: Post a Failure Message to Slack channel
+        if: ${{ failure() }}
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          channel-id: '#digi-pbsorg-ops'
+          slack-message: "Failed deploying PNR to `PRODUCTION` :robot_face: \nHash: `${{ needs.get-sha-for-git-ref.outputs.git_sha }}`\nTag: `${{ steps.tag.outputs.tag }}`\n<https://github.com/pbs/pbsorg/actions|Check Actions :thinking:>"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
