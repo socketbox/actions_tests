@@ -73,23 +73,34 @@ jobs:
       edges: ${{steps.build-matrix.outputs.result}}
     steps:
       - name: Build matrix
-        uses: actions/github-script@v7
         id: build-matrix
-        with:
-          script: |
-            const production = inputs.production;
-            const confirmation = inputs.confirmation;
-            const staging = inputs.staging; 
-            console.log("production: " + production)
-            console.log("confirmation: " + confirmation)
-            console.log("staging: " + staging)
-            const edges = [];
-            if (production === 'true' && confirmation === 'true') {
-              edges.push('pbs-digi-prod');
-            }
-            if (staging === 'true') {
-              edges.push('pbs-digi-preprod');
-            }
-            console.log("edges: " + edges)
-            return edges;
-          result-encoding: json
+        shell: python
+        run: |
+          import json
+          import os
+            
+          # GitHub Actions inputs are available as environment variables
+          production = os.environ.get('INPUT_PRODUCTION', '').lower()
+          confirmation = os.environ.get('INPUT_CONFIRMATION', '').lower()
+          staging = os.environ.get('INPUT_STAGING', '').lower()
+
+          print(f"production: {production}")
+          print(f"confirmation: {confirmation}")
+          print(f"staging: {staging}")
+
+          edges = []
+          if production == 'true' and confirmation == 'true':
+              edges.append('pbs-digi-prod')
+          if staging == 'true':
+              edges.append('pbs-digi-preprod')
+
+          print(f"edges: {edges}")
+
+          # Write to GITHUB_OUTPUT environment file
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+            print(f'result={json.dumps(edges)}', file=fh)
+
+        env:
+          INPUT_PRODUCTION: ${{ inputs.production }}
+          INPUT_CONFIRMATION: ${{ inputs.confirmation }}
+          INPUT_STAGING: ${{ inputs.staging }}
