@@ -1,25 +1,15 @@
 name: Caller Workflow
 on:
   workflow_dispatch:
-    inputs:
-      aws_profile:
-        type: choice
-        options:
-          - DEV
-          - STAGING
-          - PROD
-    
-permissions: read-all
+
+permissions:
+  id-token: write
 
 jobs:
   deploy:
-    uses: ./.github/workflows/_deploy.yml
+    uses: ./.github/workflows/invalidate_edge.yml
     with:
-      environment: ${{inputs.aws_profile}}
-
-  notify:
-    needs: [ deploy ]
-    uses: ./.github/workflows/_notify.yml
-    with:
-      environment: ${{inputs.aws_profile}}
-      simulate_deployment_result: ${{needs.deploy.outputs.simulate_deployment_status}}
+      paths: "/ /explore*"
+      production: false
+      staging: true
+      confirmation: false
