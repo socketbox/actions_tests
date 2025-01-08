@@ -99,8 +99,21 @@ jobs:
           # Write to GITHUB_OUTPUT environment file
           with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
             print(f'result={json.dumps(edges)}', file=fh)
-
         env:
           INPUT_PRODUCTION: ${{ inputs.production }}
           INPUT_CONFIRMATION: ${{ inputs.confirmation }}
           INPUT_STAGING: ${{ inputs.staging }}
+
+
+  invalidate-distribution:
+    needs: define-matrix
+    if: ${{ needs.define-matrix.outputs.edges != '[]' }}
+    strategy:
+      matrix:
+        edge_env: ${{ fromJSON( needs.define-matrix.outputs.edges ) }}
+    environment: ${{matrix.edge_env}}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Echo
+        run: |
+          echo "matrix: ${{matrix.edge_env}}"
