@@ -128,7 +128,7 @@ jobs:
           
           # Get paths and clean them
           paths = "${{inputs.paths}}"
-          clean_paths = [p.strip() for p in paths.split("\n") if p.strip()]
+          clean_paths = [p.strip() for p in paths.split() if p.strip()]
           
           # Initialize CloudFront client
           cloudfront = boto3.client('cloudfront')
