@@ -6,35 +6,6 @@ on:
         description: 'Space-delimited paths to invalidate'
         type: string
         default: |
-          /explore*
-          /livestream*
-          /show*
-          /my-station*
-          /_next*
-          /video*
-          /search*
-          /api*
-          /
-      production:
-        description: 'Invalidate production dist.'
-        default: false
-        type: boolean
-      staging:
-        description: 'Invalidate staging dist.'
-        type: boolean
-        default: true
-      confirmation:
-        description: "Confirm production invalidation"
-        required: false
-        type: boolean
-        default: false
-
-  workflow_call:
-    inputs:
-      paths:
-        description: 'Space-delimited paths to invalidate'
-        type: string
-        default: |
           /explore* 
           /livestream* 
           /show* 
@@ -52,6 +23,37 @@ on:
         description: 'Invalidate staging dist.'
         type: boolean
         default: true
+      edcar:
+        description: 'Invalidate edcar dist.'
+        type: boolean
+        default: true
+      confirmation:
+        description: "Confirm production invalidation"
+        required: false
+        type: boolean
+        default: false
+
+  workflow_call:
+    inputs:
+      paths:
+        description: 'Space-delimited paths to invalidate'
+        type: string
+        default: |
+          /explore* 
+          /livestream* 
+          /show*
+      production:
+        description: 'Invalidate production dist.'
+        default: false
+        type: boolean
+      staging:
+        description: 'Invalidate staging dist.'
+        type: boolean
+        default: true
+      edcar:
+        description: 'Invalidate edcar dist.'
+        type: boolean
+        default: true
       confirmation:
         description: "Confirm production invalidation"
         required: false
@@ -59,10 +61,7 @@ on:
         default: false
 
 permissions:
-  #actions: read
   id-token: write
-  #contents: write
-  #packages: write
 
 jobs:
   # because of limitations in jobs.<job>.if
@@ -78,32 +77,34 @@ jobs:
         run: |
           import json
           import os
-            
-          # GitHub Actions inputs are available as environment variables
+          
           production = os.environ.get('INPUT_PRODUCTION', '').lower()
           confirmation = os.environ.get('INPUT_CONFIRMATION', '').lower()
           staging = os.environ.get('INPUT_STAGING', '').lower()
+          edcar = os.environ.get('INPUT_EDCAR', '').lower()
 
           print(f"production: {production}")
           print(f"confirmation: {confirmation}")
           print(f"staging: {staging}")
+          print(f"edcar: {edcar}")
 
           edges = []
           if production == 'true' and confirmation == 'true':
               edges.append('pbs-digi-prod')
           if staging == 'true':
               edges.append('pbs-digi-preprod')
+          if edcar == 'true':
+              edges.append('pbs-edcar')
 
           print(f"edges: {edges}")
 
-          # Write to GITHUB_OUTPUT environment file
           with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
             print(f'result={json.dumps(edges)}', file=fh)
         env:
           INPUT_PRODUCTION: ${{ inputs.production }}
           INPUT_CONFIRMATION: ${{ inputs.confirmation }}
           INPUT_STAGING: ${{ inputs.staging }}
-
+          INPUT_EDCAR: ${{ inputs.edcar }}
 
   invalidate-distribution:
     needs: define-matrix
@@ -114,6 +115,18 @@ jobs:
     environment: ${{matrix.edge_env}}
     runs-on: ubuntu-latest
     steps:
-      - name: Echo
+      - name: Create CloudFront invalidation (${{matrix.edge_env}})
+        id: cloudfront-invalidation
+        if: (inputs.production && inputs.confirmation && (matrix.edge_env == 'pbs-digi-prod'))
+          || (matrix.edge_env == 'pbs-digi-preprod' && inputs.staging)
+          || (matrix.edge_env == 'pbs-edcar' && inputs.edcar)
         run: |
-          echo "matrix: ${{matrix.edge_env}}"
+          PATHS=$(echo '${{inputs.paths}}' | tr '\n' ' ')
+          echo "aws cloudfront create-invalidation --distribution-id $CF_DISTRIBUTION_ID --paths $PATHS"
+          if [[ $? -ne 0 ]]
+          then
+            echo "Creation of CloudFront invalidation failed"
+            exit 1
+          fi
+        env:
+          CF_DISTRIBUTION_ID: ${{vars.CF_DISTRIBUTION_ID}}
