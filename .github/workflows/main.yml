@@ -9,7 +9,6 @@ jobs:
   deploy:
     uses: ./.github/workflows/invalidate_edge.yml
     with:
-      paths: "/ /explore*"
       production: false
       staging: true
       confirmation: false
