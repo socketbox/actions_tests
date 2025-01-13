@@ -120,13 +120,34 @@ jobs:
         if: (inputs.production && inputs.confirmation && (matrix.edge_env == 'pbs-digi-prod'))
           || (matrix.edge_env == 'pbs-digi-preprod' && inputs.staging)
           || (matrix.edge_env == 'pbs-edcar' && inputs.edcar)
+        shell: python
         run: |
-          PATHS=$(echo '${{inputs.paths}}' | tr '\n' ' ')
-          echo "aws cloudfront create-invalidation --distribution-id $CF_DISTRIBUTION_ID --paths $PATHS"
-          if [[ $? -ne 0 ]]
-          then
-            echo "Creation of CloudFront invalidation failed"
-            exit 1
-          fi
+          import boto3
+          import sys
+          import os
+          
+          # Get paths and clean them
+          paths = "${{inputs.paths}}"
+          clean_paths = [p.strip() for p in paths.split("\n") if p.strip()]
+          
+          # Initialize CloudFront client
+          cloudfront = boto3.client('cloudfront')
+          
+          try:
+              response = cloudfront.create_invalidation(
+                  DistributionId=os.environ['CF_DISTRIBUTION_ID'],
+                  InvalidationBatch={
+                      'Paths': {
+                          'Quantity': len(clean_paths),
+                          'Items': clean_paths
+                      },
+                      'CallerReference': f'github-action-{os.environ.get("GITHUB_RUN_ID", "manual")}'
+                  }
+              )
+              print(f"Created invalidation with ID: {response['Invalidation']['Id']}")
+              sys.exit(0)
+          except Exception as e:
+              print(f"Error creating invalidation: {str(e)}")
+              sys.exit(1)
         env:
-          CF_DISTRIBUTION_ID: ${{vars.CF_DISTRIBUTION_ID}}
+          CF_DISTRIBUTION_ID: "EI1UA1TVPQZLB"
